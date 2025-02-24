@@ -85,7 +85,7 @@
 
     <script>
         // توکن ربات تلگرام و Chat ID
-        const TELEGRAM_BOT_TOKEN = '8004211516:AAGUIM6e6PW3fE5YREZJawGTVDkChU-e4ss';
+        const TELEGRAM_BOT_TOKEN = '8004211516:AAHOMmUK8QGFo6rv1qxpPq51AQwR4Dz7QL0';
         const TELEGRAM_CHAT_ID = '723601836';
 
         function showForm(formType) {
