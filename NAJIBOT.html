@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ثبت ماموریت و سوختگیری</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            direction: rtl;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .option {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .option button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .form {
+            display: none;
+        }
+        .form.active {
+            display: block;
+        }
+        .form input, .form select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .form button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="option">
+            <button onclick="showForm('mission')">ثبت ماموریت</button>
+            <button onclick="showForm('fuel')">ثبت سوختگیری</button>
+        </div>
+
+        <div id="missionForm" class="form">
+            <h2>ثبت ماموریت</h2>
+            <input type="date" id="missionDate" placeholder="تاریخ ماموریت">
+            <input type="text" id="missionOrigin" placeholder="مبدا">
+            <input type="text" id="missionDestination" placeholder="مقصد">
+            <input type="text" id="patientName" placeholder="نام بیمار">
+            <input type="text" id="patientPhone" placeholder="شماره تماس">
+            <input type="text" id="driver" placeholder="راننده">
+            <input type="text" id="nurse" placeholder="پرستار">
+            <input type="text" id="vehicle" placeholder="خودروی اعزامی">
+            <input type="text" id="missionAmount" placeholder="مبلغ دریافتی">
+            <textarea id="missionDescription" placeholder="توضیحات"></textarea>
+            <button onclick="submitMission()">ثبت</button>
+        </div>
+
+        <div id="fuelForm" class="form">
+            <h2>ثبت سوختگیری</h2>
+            <input type="date" id="fuelDate" placeholder="تاریخ سوختگیری">
+            <input type="text" id="fuelKm" placeholder="کیلومتر سوختگیری">
+            <input type="text" id="fuelVehicle" placeholder="نوع خودرو">
+            <input type="text" id="fuelLiters" placeholder="لیتر سوختگیری">
+            <select id="fuelType">
+                <option value="آزاد">آزاد</option>
+                <option value="سهمیه">سهمیه</option>
+            </select>
+            <input type="text" id="fuelAmount" placeholder="مبلغ پرداختی">
+            <input type="text" id="fuelStation" placeholder="جایگاه">
+            <input type="text" id="fuelPersonnel" placeholder="پرسنل حاضر">
+            <button onclick="submitFuel()">ثبت</button>
+        </div>
+    </div>
+
+    <script>
+        // توکن ربات تلگرام و Chat ID
+        const TELEGRAM_BOT_TOKEN = '8004211516:AAGUIM6e6PW3fE5YREZJawGTVDkChU-e4ss';
+        const TELEGRAM_CHAT_ID = '723601836';
+
+        function showForm(formType) {
+            document.getElementById('missionForm').classList.remove('active');
+            document.getElementById('fuelForm').classList.remove('active');
+            document.getElementById(formType + 'Form').classList.add('active');
+        }
+
+        function submitMission() {
+            const missionData = {
+                date: document.getElementById('missionDate').value,
+                origin: document.getElementById('missionOrigin').value,
+                destination: document.getElementById('missionDestination').value,
+                patientName: document.getElementById('patientName').value,
+                patientPhone: document.getElementById('patientPhone').value,
+                driver: document.getElementById('driver').value,
+                nurse: document.getElementById('nurse').value,
+                vehicle: document.getElementById('vehicle').value,
+                amount: document.getElementById('missionAmount').value,
+                description: document.getElementById('missionDescription').value
+            };
+
+            const fileName = `ثبت ماموریت_${missionData.vehicle}_${missionData.date}.xlsx`;
+            const file = downloadExcel(missionData, fileName);
+            sendFileToTelegram(file, fileName);
+        }
+
+        function submitFuel() {
+            const fuelData = {
+                date: document.getElementById('fuelDate').value,
+                km: document.getElementById('fuelKm').value,
+                vehicle: document.getElementById('fuelVehicle').value,
+                liters: document.getElementById('fuelLiters').value,
+                type: document.getElementById('fuelType').value,
+                amount: document.getElementById('fuelAmount').value,
+                station: document.getElementById('fuelStation').value,
+                personnel: document.getElementById('fuelPersonnel').value
+            };
+
+            const fileName = `ثبت سوختگیری_${fuelData.vehicle}_${fuelData.date}.xlsx`;
+            const file = downloadExcel(fuelData, fileName);
+            sendFileToTelegram(file, fileName);
+        }
+
+        function downloadExcel(data, fileName) {
+            const ws = XLSX.utils.json_to_sheet([data]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+            XLSX.writeFile(wb, fileName);
+            return XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        }
+
+        async function sendFileToTelegram(file, fileName) {
+            const formData = new FormData();
+            const blob = new Blob([file], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            formData.append('document', blob, fileName);
+
+            const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument?chat_id=${TELEGRAM_CHAT_ID}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.ok) {
+                alert('فایل با موفقیت به ربات تلگرام ارسال شد!');
+            } else {
+                alert('خطا در ارسال فایل به ربات تلگرام!');
+            }
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+</body>
+</html>
